@@ -25,60 +25,62 @@ import json
 
 # Initialise session state
 if "files_processed" not in st.session_state:
-    st.session_state.files_processed = 0
+    st.session_state.files_processed = []
 if "packages_processed" not in st.session_state:
     st.session_state.packages_processed = 0
 if "file_summaries" not in st.session_state:
     st.session_state.file_summaries = []
 
-# --- The page ---------------------------------------------------------------------
-#
-# No scaffolding. You have written two of these now, and this one does the same
-# processing as process_file.py — the difference is that it remembers.
-#
-# What you have to work out for yourself:
-#
-#   - the three parts of the session-state pattern: initialise once, update on the
-#     click, display from state — README Reference #6
-#   - a button, key="process", so that choosing a file and clicking are two
-#     different things
-#   - two st.metric cards, "Files processed" and "Packages processed", side by side
-#     in st.columns(2), on the page from the first run
-#   - one st.info line per file processed so far, kept in a list
-#
-# README Step 7 names the two traps. The tests are built around them: choosing a
-# file without clicking must change nothing, and a rerun with the same file still
-# chosen must not count it again.
-
 
 st.title("Process File of Packages")
 
-uploaded_file = st.file_uploader("Upload a text file of package data:", key="package_file")
+uploaded_file= st.file_uploader("Upload package file:", key="package_file")
 button_clicked = st.button("Process File", key="process")
 
+if st.session_state.packages_processed == 0:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Files processed", len(st.session_state.files_processed))
+
+    with col2:
+        st.metric("Packages processed", st.session_state.packages_processed)
+
 if button_clicked and uploaded_file is not None:
-    st.session_state.files_processed += 1
-    # Read bytes from the file
-    bytes_data = uploaded_file.read()
-    # Decode bytes to a string using UTF-8 encoding
-    text = bytes_data.decode('utf-8')
+    if uploaded_file.name not in st.session_state.files_processed:
+        # Read bytes from the file
+        bytes_data = uploaded_file.read()
+        # Decode bytes to a string using UTF-8 encoding
+        text = bytes_data.decode('utf-8')
+        st.session_state.files_processed.append(uploaded_file.name)
 
-    data = []
-    for line in text.splitlines():
-        stripped_line = line.strip()
-        if stripped_line:
-            package = parse_packaging(stripped_line)
-            total = calc_total_units(package)
-            unit = get_unit(package)
-            st.session_state.packages_processed += 1
-            data.append((stripped_line, total, unit))
+        package_count = 0
+        packages_list = []
+        for line in text.splitlines():
+            stripped_line = line.strip()
+            if stripped_line:
+                package = parse_packaging(stripped_line)
+                packages_list.append(package)
+                total = calc_total_units(package)
+                unit = get_unit(package)
+                package_count += 1
 
-    original_name = uploaded_file.name  
-    json_name = original_name.replace('.txt', '.json')
-    save_path = f'data/{json_name}'
-    with open(save_path, 'w') as json_file:
-        json.dump(data, json_file)
+        original_name = uploaded_file.name  
+        json_name = original_name.replace('.txt', '.json')
+        save_path = f'data/{json_name}'
+        with open(save_path, 'w') as json_file:
+            json.dump(packages_list, json_file)
 
-    st.session_state.file_summaries.append(f"{len(data)} packages written to {save_path}")
-    for summary in st.session_state.file_summaries:
-        st.info(summary)
+        st.session_state.files_processed.append(uploaded_file.name)
+        st.session_state.packages_processed += package_count
+
+        with col1:
+            st.metric("Files processed", len(st.session_state.files_processed))
+
+        with col2:
+            st.metric("Packages processed", st.session_state.packages_processed)
+
+        st.session_state.file_summaries.append(f"{package_count} packages written to {save_path}")
+        for summary in st.session_state.file_summaries:
+            st.info(summary)
+    else:
+        st.info(f"File {uploaded_file.name} already processed.")

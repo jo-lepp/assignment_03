@@ -30,25 +30,28 @@ st.title("Process File of Packages")
 uploaded_file = st.file_uploader("Upload a text file of package data:", key="package_file")
 
 if uploaded_file is not None:
-    # Read bytes from the file
-    bytes_data = uploaded_file.read()
-    # Decode bytes to a string using UTF-8 encoding
-    text = bytes_data.decode('utf-8')
+    text = uploaded_file.getvalue().decode("utf-8")    # bytes -> str
+    for line in text.splitlines():                      # one str per line
+        line = line.strip()
+        if not line:                                    # the empty line after the final newline
+            continue
 
-    data = []
+    packages = 0
+    packages_list = []
     for line in text.splitlines():
         stripped_line = line.strip()
         if stripped_line:
             package = parse_packaging(stripped_line)
+            packages_list.append(package)
             total = calc_total_units(package)
             unit = get_unit(package)
-            data.append((stripped_line, total, unit))
+            packages += 1
             st.info(f"{stripped_line} ➡️ Total 📦 Size: {total} {unit}")
 
     original_name = uploaded_file.name  
     json_name = original_name.replace('.txt', '.json')
     save_path = f'data/{json_name}'
     with open(save_path, 'w') as json_file:
-        json.dump(data, json_file)
+        json.dump(packages_list, json_file, indent=4)
 
-    st.write(f' {len(data)} packages written to {save_path}')
+    st.success(f'{packages} packages written to {save_path}')
