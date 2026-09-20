@@ -21,34 +21,34 @@ Test it: pytest tests/test_streamlit.py -k process_file
 # `one_package.py` is your worked example for anything structural, and README
 # Reference #4 and #5 cover the two things that are new here.
 
-# TODO: imports — streamlit, json, and what you need from packaging_parser.
+import streamlit as st
+from packaging_parser import calc_total_units, get_unit, parse_packaging
+import json
 
+st.title("Process File of Packages")
 
-# TODO: the title, exactly:   Process File of Packages
+uploaded_file = st.file_uploader("Upload a text file of package data:", key="package_file")
 
+if uploaded_file is not None:
+    # Read bytes from the file
+    bytes_data = uploaded_file.read()
+    # Decode bytes to a string using UTF-8 encoding
+    text = bytes_data.decode('utf-8')
 
-# TODO: a file uploader, key="package_file". Like the text box in Part 1 it returns
-#       a value — None until a file has been chosen — so the same kind of guard
-#       goes around everything below.
+    data = []
+    for line in text.splitlines():
+        stripped_line = line.strip()
+        if stripped_line:
+            package = parse_packaging(stripped_line)
+            total = calc_total_units(package)
+            unit = get_unit(package)
+            data.append((stripped_line, total, unit))
+            st.info(f"{stripped_line} ➡️ Total 📦 Size: {total} {unit}")
 
+    original_name = uploaded_file.name  
+    json_name = original_name.replace('.txt', '.json')
+    save_path = f'data/{json_name}'
+    with open(save_path, 'w') as json_file:
+        json.dump(data, json_file)
 
-# 1. Bytes to text. The upload is bytes; decode it, then split it into lines.
-# TODO
-
-
-# 2. Every line: strip it, SKIP IT IF IT IS BLANK, parse it, keep the parsed package
-#    in a list, and show the line with its total. Match this layout:
-#
-#        12 eggs in 1 carton / 3 cartons in 1 box ➡️ Total 📦 Size: 36 eggs
-# TODO
-
-
-# 3. Write the list of parsed packages to data/<name>.json with json.dump, where
-#    <name> is the uploaded file's name with .txt replaced by .json.
-# TODO
-
-
-# 4. Say what happened, exactly:
-#
-#        3 packages written to data/packaging1.json
-# TODO
+    st.write(f' {len(data)} packages written to {save_path}')
