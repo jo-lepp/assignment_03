@@ -19,6 +19,17 @@ click instead: `st.button` is True only on the one rerun the click caused.
 Run it:  Run and Debug -> "Streamlit Run: Current File"   (see README Reference #1)
 Test it: pytest tests/test_streamlit.py -k process_files
 """
+import streamlit as st
+from packaging_parser import calc_total_units, get_unit, parse_packaging
+import json
+
+# Initialise session state
+if "files_processed" not in st.session_state:
+    st.session_state.files_processed = 0
+if "packages_processed" not in st.session_state:
+    st.session_state.packages_processed = 0
+if "file_summaries" not in st.session_state:
+    st.session_state.file_summaries = []
 
 # --- The page ---------------------------------------------------------------------
 #
@@ -38,3 +49,36 @@ Test it: pytest tests/test_streamlit.py -k process_files
 # README Step 7 names the two traps. The tests are built around them: choosing a
 # file without clicking must change nothing, and a rerun with the same file still
 # chosen must not count it again.
+
+
+st.title("Process File of Packages")
+
+uploaded_file = st.file_uploader("Upload a text file of package data:", key="package_file")
+button_clicked = st.button("Process File", key="process")
+
+if button_clicked and uploaded_file is not None:
+    st.session_state.files_processed += 1
+    # Read bytes from the file
+    bytes_data = uploaded_file.read()
+    # Decode bytes to a string using UTF-8 encoding
+    text = bytes_data.decode('utf-8')
+
+    data = []
+    for line in text.splitlines():
+        stripped_line = line.strip()
+        if stripped_line:
+            package = parse_packaging(stripped_line)
+            total = calc_total_units(package)
+            unit = get_unit(package)
+            st.session_state.packages_processed += 1
+            data.append((stripped_line, total, unit))
+
+    original_name = uploaded_file.name  
+    json_name = original_name.replace('.txt', '.json')
+    save_path = f'data/{json_name}'
+    with open(save_path, 'w') as json_file:
+        json.dump(data, json_file)
+
+    st.session_state.file_summaries.append(f"{len(data)} packages written to {save_path}")
+    for summary in st.session_state.file_summaries:
+        st.info(summary)
