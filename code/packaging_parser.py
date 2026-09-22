@@ -44,6 +44,7 @@ def parse_packaging(packaging_data: str) -> list[dict]:
     after the number is the name. A description that does not follow the pattern
     (no number where one is expected, an empty string) raises a ValueError.
     """
+    import streamlit as st
     try:
         package = []
         levels = packaging_data.split("/")
