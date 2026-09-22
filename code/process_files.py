@@ -22,6 +22,7 @@ Test it: pytest tests/test_streamlit.py -k process_files
 import streamlit as st
 from packaging_parser import calc_total_units, get_unit, parse_packaging
 import json
+import os
 
 # Initialise session state
 if "files_processed" not in st.session_state:
@@ -32,38 +33,38 @@ if "file_summaries" not in st.session_state:
     st.session_state.file_summaries = []
 
 
-st.title("Process File of Packages")
+st.title("Process Package Files")
 
 uploaded_file= st.file_uploader("Upload package file:", key="package_file")
-button_clicked = st.button("Process File", key="process")
+button = st.button("Process File", key="process")
 
-if st.session_state.packages_processed == 0:
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Files processed", len(st.session_state.files_processed))
+col1, col2 = st.columns(2)
+metric1 = col1.empty()
+metric2 = col2.empty()
 
-    with col2:
-        st.metric("Packages processed", st.session_state.packages_processed)
+# Show current (starting) counts immediately
+metric1.metric("Files processed", len(st.session_state.files_processed))
+metric2.metric("Packages processed", st.session_state.packages_processed)
 
-if button_clicked and uploaded_file is not None:
+if button and (uploaded_file is not None):
     if uploaded_file.name not in st.session_state.files_processed:
         # Read bytes from the file
         bytes_data = uploaded_file.read()
         # Decode bytes to a string using UTF-8 encoding
         text = bytes_data.decode('utf-8')
-        st.session_state.files_processed.append(uploaded_file.name)
 
-        package_count = 0
         packages_list = []
+        package_count = 0
         for line in text.splitlines():
             stripped_line = line.strip()
             if stripped_line:
                 package = parse_packaging(stripped_line)
-                packages_list.append(package)
                 total = calc_total_units(package)
                 unit = get_unit(package)
+                packages_list.append(package)
                 package_count += 1
 
+        os.makedirs('data', exist_ok=True)
         original_name = uploaded_file.name  
         json_name = original_name.replace('.txt', '.json')
         save_path = f'data/{json_name}'
@@ -73,14 +74,15 @@ if button_clicked and uploaded_file is not None:
         st.session_state.files_processed.append(uploaded_file.name)
         st.session_state.packages_processed += package_count
 
-        with col1:
-            st.metric("Files processed", len(st.session_state.files_processed))
-
-        with col2:
-            st.metric("Packages processed", st.session_state.packages_processed)
+        metric1.metric("Files processed", len(st.session_state.files_processed))
+        metric2.metric("Packages processed", st.session_state.packages_processed)
 
         st.session_state.file_summaries.append(f"{package_count} packages written to {save_path}")
         for summary in st.session_state.file_summaries:
             st.info(summary)
     else:
-        st.info(f"File {uploaded_file.name} already processed.")
+        for summary in st.session_state.file_summaries:
+            st.info(summary)
+
+for summary in st.session_state.file_summaries:
+    st.info(summary)

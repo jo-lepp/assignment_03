@@ -1,5 +1,13 @@
 Write your reflection here.
 
+Something I really struggled with was making the tests for process_files.py pass (accumulates_across_uploads and does_not_double_count),
+mostly because the feedback from the tests wasn't really helpful, but I think I also need to create a schematic of information 
+before assignments becuase it'll help with for loops and understanding when to do what actions. Mostly, what I struggled with
+was the creation of cols that were simultaneously in session state and also created at the beginning, which we didn't go over in class.
+In the future, I can refer to resources to understand more in-depth concepts, like the metric/col/etc sesison state formatting better. 
+I did well with button-triggered events and the looping.
+
+
 See reflection.md for what makes a good reflection — be specific, use the
 terminology from this assignment (rerun, widget, return value, guard, bytes vs.
 text, decode, session state, initialise once, button-triggered, metric), and make
