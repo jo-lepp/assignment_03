@@ -44,19 +44,22 @@ def parse_packaging(packaging_data: str) -> list[dict]:
     after the number is the name. A description that does not follow the pattern
     (no number where one is expected, an empty string) raises a ValueError.
     """
-    package = []
-    levels = packaging_data.split("/")
+    try:
+        package = []
+        levels = packaging_data.split("/")
 
-    for level in levels:
-        # "12 eggs in 1 carton" -> the left side, "12 eggs", is this level
-        left_side = level.split(" in ")[0]
-        package.append(_parse_item(left_side))
+        for level in levels:
+            # "12 eggs in 1 carton" -> the left side, "12 eggs", is this level
+            left_side = level.split(" in ")[0]
+            package.append(_parse_item(left_side))
 
-    # The right side of the LAST level, "1 box", is the outermost container.
-    right_side = levels[-1].split(" in ")[-1]
-    package.append(_parse_item(right_side))
+        # The right side of the LAST level, "1 box", is the outermost container.
+        right_side = levels[-1].split(" in ")[-1]
+        package.append(_parse_item(right_side))
 
-    return package
+        return package
+    except ValueError:
+        st.error("Please input a text file structured like {30 tablets in 1 box}")
 
 
 def _parse_item(item: str) -> dict:
